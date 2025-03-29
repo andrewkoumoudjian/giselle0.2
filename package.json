@@ -1,0 +1,18 @@
+{
+  "name": "giselle-ai-interview-system",
+  "version": "0.1.0",
+  "description": "AI-powered unbiased interview system",
+  "main": "index.js",
+  "scripts": {
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && python3 -m src.main",
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
+    "install:all": "npm install && cd frontend && npm install",
+    "setup": "cd frontend && bash env-setup.sh"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "author": "",
+  "license": "MIT"
+} 
