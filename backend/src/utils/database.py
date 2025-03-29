@@ -1,221 +1,232 @@
 import os
 import json
+import uuid
+import logging
+import psycopg2
+from psycopg2.extras import RealDictCursor, register_uuid
+from datetime import datetime
 from typing import Dict, List, Any, Optional
-from supabase import create_client, Client
-from dotenv import load_dotenv
 
-load_dotenv()
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-class SupabaseClient:
-    """Singleton client for Supabase database operations."""
+class PostgresDatabase:
+    def __init__(self):
+        # Register UUID type
+        register_uuid()
+        
+        # Get database connection parameters from environment
+        self.db_params = {
+            'dbname': os.getenv('DB_NAME', 'giselle_db'),
+            'user': os.getenv('DB_USER', 'postgres'),
+            'password': os.getenv('DB_PASSWORD', 'postgres'),
+            'host': os.getenv('DB_HOST', 'localhost'),
+            'port': os.getenv('DB_PORT', '5432'),
+        }
+        
+        # Test connection
+        try:
+            self._get_connection()
+            logger.info("Successfully connected to PostgreSQL database")
+        except Exception as e:
+            logger.error(f"Failed to connect to database: {str(e)}")
+            raise
     
-    _instance = None
+    def _get_connection(self):
+        """Establish a new database connection."""
+        conn = psycopg2.connect(**self.db_params)
+        return conn
     
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(SupabaseClient, cls).__new__(cls)
-            
-            # Check if we're using mock data
-            use_mock = os.getenv("USE_MOCK_DATA", "true").lower() == "true"
-            
-            # Get Supabase credentials
-            supabase_url = os.getenv("SUPABASE_URL")
-            supabase_key = os.getenv("SUPABASE_KEY")
-            
-            try:
-                if not use_mock and supabase_url and supabase_key:
-                    print("Connecting to real Supabase database...")
-                    cls._instance.client = create_client(supabase_url, supabase_key)
-                    # Test the connection
-                    cls._instance.client.table('companies').select("*").limit(1).execute()
-                    cls._instance.use_mock = False
-                    print("Successfully connected to Supabase database")
-                else:
-                    if use_mock:
-                        reason = "USE_MOCK_DATA is set to true"
-                    elif not supabase_url:
-                        reason = "SUPABASE_URL is not set"
-                    elif not supabase_key:
-                        reason = "SUPABASE_KEY is not set"
-                    else:
-                        reason = "unknown reason"
-                    
-                    print(f"WARNING: Using mock database - {reason}")
-                    # Use internal mock implementation for testing/development
-                    from .mock_database import MockSupabaseClient
-                    cls._instance.client = MockSupabaseClient()
-                    cls._instance.use_mock = True
-            except Exception as e:
-                print(f"ERROR connecting to Supabase: {str(e)}")
-                print("Falling back to mock database...")
-                from .mock_database import MockSupabaseClient
-                cls._instance.client = MockSupabaseClient()
-                cls._instance.use_mock = True
-                
-        return cls._instance
+    def execute(self, query, params=None):
+        """Execute a query and return the results."""
+        with self._get_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, params or {})
+                try:
+                    results = cur.fetchall()
+                    return [dict(row) for row in results]
+                except psycopg2.ProgrammingError:
+                    # No results to fetch (e.g., for INSERT/UPDATE/DELETE)
+                    return []
     
-    def get_client(self) -> Client:
-        """Get the Supabase client instance."""
-        return self.client
+    def execute_one(self, query, params=None):
+        """Execute a query and return a single result."""
+        results = self.execute(query, params)
+        return results[0] if results else None
     
-    # Companies
-    def create_company(self, name: str) -> Dict[str, Any]:
+    # Company operations
+    def create_company(self, name):
         """Create a new company."""
-        return self.client.table('companies').insert({"name": name}).execute().data[0]
+        company_id = uuid.uuid4()
+        query = """
+            INSERT INTO companies (id, name) 
+            VALUES (%(id)s, %(name)s)
+            RETURNING id, name, created_at
+        """
+        params = {'id': company_id, 'name': name}
+        return self.execute_one(query, params)
     
-    def get_company(self, company_id: str) -> Dict[str, Any]:
+    def get_company(self, company_id):
         """Get a company by ID."""
-        return self.client.table('companies').select("*").eq("id", company_id).execute().data[0]
+        query = "SELECT * FROM companies WHERE id = %(id)s"
+        return self.execute_one(query, {'id': company_id})
     
-    # Job Descriptions
-    def create_job_description(self, 
-                              company_id: str, 
-                              title: str, 
-                              description: str, 
-                              department: Optional[str] = None,
-                              required_skills: Optional[List[str]] = None,
-                              soft_skills_priorities: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
-        """Create a new job description."""
-        job_data = {
-            "company_id": company_id,
-            "title": title,
-            "description": description,
+    # Job operations
+    def create_job(self, company_id, title, description, department=None, required_skills=None):
+        """Create a new job posting."""
+        job_id = uuid.uuid4()
+        query = """
+            INSERT INTO jobs (id, company_id, title, description, department, required_skills) 
+            VALUES (%(id)s, %(company_id)s, %(title)s, %(description)s, %(department)s, %(required_skills)s)
+            RETURNING id, company_id, title, description, department, required_skills, created_at
+        """
+        params = {
+            'id': job_id,
+            'company_id': company_id,
+            'title': title,
+            'description': description,
+            'department': department,
+            'required_skills': required_skills if required_skills else []
         }
-        
-        if department:
-            job_data["department"] = department
-            
-        if required_skills:
-            job_data["required_skills"] = json.dumps(required_skills)
-            
-        if soft_skills_priorities:
-            job_data["soft_skills_priorities"] = json.dumps(soft_skills_priorities)
-            
-        return self.client.table('job_descriptions').insert(job_data).execute().data[0]
+        return self.execute_one(query, params)
     
-    def get_job_description(self, job_id: str) -> Dict[str, Any]:
-        """Get a job description by ID."""
-        return self.client.table('job_descriptions').select("*").eq("id", job_id).execute().data[0]
+    def get_job(self, job_id):
+        """Get a job by ID."""
+        query = "SELECT * FROM jobs WHERE id = %(id)s"
+        return self.execute_one(query, {'id': job_id})
     
-    # Candidates
-    def create_candidate(self, name: str, email: str, resume_url: Optional[str] = None) -> Dict[str, Any]:
+    # Candidate operations
+    def create_candidate(self, name, email, resume_path=None):
         """Create a new candidate."""
-        candidate_data = {
-            "name": name,
-            "email": email
+        candidate_id = uuid.uuid4()
+        query = """
+            INSERT INTO candidates (id, name, email, resume_path) 
+            VALUES (%(id)s, %(name)s, %(email)s, %(resume_path)s)
+            RETURNING id, name, email, resume_path, created_at
+        """
+        params = {
+            'id': candidate_id,
+            'name': name,
+            'email': email,
+            'resume_path': resume_path
         }
-        
-        if resume_url:
-            candidate_data["resume_url"] = resume_url
-            
-        return self.client.table('candidates').insert(candidate_data).execute().data[0]
+        return self.execute_one(query, params)
     
-    def update_candidate_resume(self, candidate_id: str, resume_url: str, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update a candidate's resume information."""
-        return self.client.table('candidates').update({
-            "resume_url": resume_url,
-            "resume_parsed": json.dumps(parsed_data)
-        }).eq("id", candidate_id).execute().data[0]
-    
-    def get_candidate(self, candidate_id: str) -> Dict[str, Any]:
+    def get_candidate(self, candidate_id):
         """Get a candidate by ID."""
-        return self.client.table('candidates').select("*").eq("id", candidate_id).execute().data[0]
+        query = "SELECT * FROM candidates WHERE id = %(id)s"
+        return self.execute_one(query, {'id': candidate_id})
     
-    # Interviews
-    def create_interview(self, job_id: str, candidate_id: str) -> Dict[str, Any]:
+    # Interview operations
+    def create_interview(self, job_id, candidate_id):
         """Create a new interview."""
-        return self.client.table('interviews').insert({
-            "job_id": job_id,
-            "candidate_id": candidate_id,
-            "status": "pending"
-        }).execute().data[0]
-    
-    def update_interview_status(self, interview_id: str, status: str) -> Dict[str, Any]:
-        """Update an interview's status."""
-        update_data = {"status": status}
-        
-        if status == "completed":
-            update_data["completed_at"] = "now()"
-            
-        return self.client.table('interviews').update(update_data).eq("id", interview_id).execute().data[0]
-    
-    def get_interview(self, interview_id: str) -> Dict[str, Any]:
-        """Get an interview by ID."""
-        return self.client.table('interviews').select("*").eq("id", interview_id).execute().data[0]
-    
-    # Questions
-    def create_questions(self, interview_id: str, questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Create multiple questions for an interview."""
-        question_data = []
-        
-        for i, q in enumerate(questions):
-            question_data.append({
-                "interview_id": interview_id,
-                "text": q["question"],
-                "type": q.get("type", "behavioral"),
-                "skill_assessed": q.get("skill_assessed"),
-                "order_index": i
-            })
-            
-        return self.client.table('questions').insert(question_data).execute().data
-    
-    def get_interview_questions(self, interview_id: str) -> List[Dict[str, Any]]:
-        """Get all questions for an interview."""
-        return self.client.table('questions').select("*").eq("interview_id", interview_id).order("order_index").execute().data
-    
-    # Responses
-    def create_response(self, question_id: str, audio_url: str) -> Dict[str, Any]:
-        """Create a new response."""
-        return self.client.table('responses').insert({
-            "question_id": question_id,
-            "audio_url": audio_url
-        }).execute().data[0]
-    
-    def update_response_analysis(self, response_id: str, transcription: str, analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Update a response with transcription and analysis."""
-        return self.client.table('responses').update({
-            "transcription": transcription,
-            "analysis_results": json.dumps(analysis)
-        }).eq("id", response_id).execute().data[0]
-    
-    # Assessments
-    def create_assessment(self, interview_id: str, assessment_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new assessment."""
-        data = {
-            "interview_id": interview_id,
-            "empathy_score": assessment_data.get("empathy_score"),
-            "collaboration_score": assessment_data.get("collaboration_score"),
-            "confidence_score": assessment_data.get("confidence_score"),
-            "english_proficiency": assessment_data.get("english_proficiency"),
-            "professionalism": assessment_data.get("professionalism"),
+        interview_id = uuid.uuid4()
+        query = """
+            INSERT INTO interviews (id, job_id, candidate_id, status) 
+            VALUES (%(id)s, %(job_id)s, %(candidate_id)s, 'pending')
+            RETURNING id, job_id, candidate_id, status, created_at
+        """
+        params = {
+            'id': interview_id,
+            'job_id': job_id,
+            'candidate_id': candidate_id
         }
-        
-        if "field_importance" in assessment_data:
-            data["field_importance"] = json.dumps(assessment_data["field_importance"])
-            
-        if "candidate_skills" in assessment_data:
-            data["candidate_skills"] = json.dumps(assessment_data["candidate_skills"])
-            
-        if "correlation_matrix" in assessment_data:
-            data["correlation_matrix"] = json.dumps(assessment_data["correlation_matrix"])
-            
-        return self.client.table('assessments').insert(data).execute().data[0]
+        interview = self.execute_one(query, params)
+        return interview
     
-    def get_assessment(self, interview_id: str) -> Dict[str, Any]:
-        """Get an assessment by interview ID."""
-        return self.client.table('assessments').select("*").eq("interview_id", interview_id).execute().data[0]
+    def get_interview(self, interview_id):
+        """Get an interview by ID."""
+        query = "SELECT * FROM interviews WHERE id = %(id)s"
+        return self.execute_one(query, {'id': interview_id})
     
-    # Storage methods
-    def upload_resume(self, file_path: str, file_name: str) -> str:
-        """Upload a resume file to storage and return the URL."""
-        with open(file_path, 'rb') as f:
-            self.client.storage.from_('resumes').upload(file_name, f)
-            
-        return self.client.storage.from_('resumes').get_public_url(file_name)
+    def update_interview_status(self, interview_id, status):
+        """Update the status of an interview."""
+        query = """
+            UPDATE interviews 
+            SET status = %(status)s
+            WHERE id = %(id)s
+            RETURNING id, job_id, candidate_id, status, created_at
+        """
+        params = {'id': interview_id, 'status': status}
+        return self.execute_one(query, params)
     
-    def upload_audio(self, file_path: str, file_name: str) -> str:
-        """Upload an audio file to storage and return the URL."""
-        with open(file_path, 'rb') as f:
-            self.client.storage.from_('interview_audio').upload(file_name, f)
-            
-        return self.client.storage.from_('interview_audio').get_public_url(file_name) 
+    # Question operations
+    def create_questions(self, interview_id, questions):
+        """Create questions for an interview."""
+        created_questions = []
+        for idx, question in enumerate(questions):
+            question_id = uuid.uuid4()
+            query = """
+                INSERT INTO questions (id, interview_id, text, type, skill_assessed, order_index) 
+                VALUES (%(id)s, %(interview_id)s, %(text)s, %(type)s, %(skill_assessed)s, %(order_index)s)
+                RETURNING id, interview_id, text, type, skill_assessed, order_index, created_at
+            """
+            params = {
+                'id': question_id,
+                'interview_id': interview_id,
+                'text': question['text'],
+                'type': question.get('type', 'standard'),
+                'skill_assessed': question.get('skill_assessed'),
+                'order_index': idx
+            }
+            created_question = self.execute_one(query, params)
+            created_questions.append(created_question)
+        return created_questions
+    
+    def get_interview_questions(self, interview_id):
+        """Get all questions for an interview."""
+        query = """
+            SELECT * FROM questions 
+            WHERE interview_id = %(interview_id)s 
+            ORDER BY order_index
+        """
+        return self.execute(query, {'interview_id': interview_id})
+    
+    # Response operations
+    def create_response(self, question_id, response_text, audio_path=None, analysis=None):
+        """Create a response to a question."""
+        response_id = uuid.uuid4()
+        query = """
+            INSERT INTO responses (id, question_id, response_text, audio_path, analysis) 
+            VALUES (%(id)s, %(question_id)s, %(response_text)s, %(audio_path)s, %(analysis)s)
+            RETURNING id, question_id, response_text, audio_path, analysis, created_at
+        """
+        params = {
+            'id': response_id,
+            'question_id': question_id,
+            'response_text': response_text,
+            'audio_path': audio_path,
+            'analysis': json.dumps(analysis) if analysis else None
+        }
+        return self.execute_one(query, params)
+    
+    def get_response(self, response_id):
+        """Get a response by ID."""
+        query = "SELECT * FROM responses WHERE id = %(id)s"
+        return self.execute_one(query, {'id': response_id})
+    
+    def update_response_analysis(self, response_id, analysis):
+        """Update the analysis of a response."""
+        query = """
+            UPDATE responses 
+            SET analysis = %(analysis)s
+            WHERE id = %(id)s
+            RETURNING id, question_id, response_text, audio_path, analysis, created_at
+        """
+        params = {'id': response_id, 'analysis': json.dumps(analysis)}
+        return self.execute_one(query, params)
+
+# Database factory
+def get_database():
+    """Get the appropriate database implementation based on environment."""
+    use_mock = os.getenv('USE_MOCK_DATA', 'true').lower() == 'true'
+    use_postgres = os.getenv('USE_POSTGRES', 'false').lower() == 'true'
+    
+    if not use_mock and use_postgres:
+        logger.info("Using PostgreSQL database")
+        return PostgresDatabase()
+    else:
+        logger.warning("Using mock database - USE_MOCK_DATA is set to true or USE_POSTGRES is set to false")
+        from .mock_database import MockDatabase
+        return MockDatabase() 
