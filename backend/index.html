@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    <p>This page tests the connection between the frontend and backend.</p>
+    
+    <div>
+        <h2>Health Check</h2>
+        <button id="healthCheck">Test Health Endpoint</button>
+        <pre id="healthResult">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Create Candidate</h2>
+        <button id="createCandidate">Create Test Candidate</button>
+        <pre id="candidateResult">Results will appear here...</pre>
+    </div>
+    
+    <script>
+        document.getElementById('healthCheck').addEventListener('click', async () => {
+            const resultElement = document.getElementById('healthResult');
+            resultElement.textContent = 'Fetching health status...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                resultElement.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('createCandidate').addEventListener('click', async () => {
+            const resultElement = document.getElementById('candidateResult');
+            resultElement.textContent = 'Creating candidate...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/candidates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: 'test@example.com'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Status: ${response.status}, ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                resultElement.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html> 

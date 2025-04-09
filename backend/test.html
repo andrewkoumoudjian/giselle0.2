@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    
+    <div>
+        <h2>Health Check</h2>
+        <button id="health-check">Test Health Endpoint</button>
+        <pre id="health-result">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Get Candidates</h2>
+        <button id="get-candidates">Get Candidates</button>
+        <pre id="candidates-result">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Create Candidate</h2>
+        <input type="text" id="candidate-name" placeholder="Name" value="Test User">
+        <input type="email" id="candidate-email" placeholder="Email" value="test@example.com">
+        <button id="create-candidate">Create Candidate</button>
+        <pre id="create-result">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Get Jobs</h2>
+        <button id="get-jobs">Get Jobs</button>
+        <pre id="jobs-result">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Create Job</h2>
+        <input type="text" id="job-title" placeholder="Title" value="Test Job">
+        <input type="text" id="job-description" placeholder="Description" value="This is a test job description">
+        <button id="create-job">Create Job</button>
+        <pre id="job-create-result">Results will appear here...</pre>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        document.getElementById('health-check').addEventListener('click', async () => {
+            const resultEl = document.getElementById('health-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('get-candidates').addEventListener('click', async () => {
+            const resultEl = document.getElementById('candidates-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`${API_URL}/candidates`);
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('create-candidate').addEventListener('click', async () => {
+            const resultEl = document.getElementById('create-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const name = document.getElementById('candidate-name').value;
+                const email = document.getElementById('candidate-email').value;
+                
+                if (!name || !email) {
+                    resultEl.textContent = 'Error: Name and email are required';
+                    return;
+                }
+                
+                const response = await fetch(`${API_URL}/candidates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+                
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('get-jobs').addEventListener('click', async () => {
+            const resultEl = document.getElementById('jobs-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`${API_URL}/jobs`);
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('create-job').addEventListener('click', async () => {
+            const resultEl = document.getElementById('job-create-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const title = document.getElementById('job-title').value;
+                const description = document.getElementById('job-description').value;
+                
+                if (!title || !description) {
+                    resultEl.textContent = 'Error: Title and description are required';
+                    return;
+                }
+                
+                const response = await fetch(`${API_URL}/jobs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, description })
+                });
+                
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html> 

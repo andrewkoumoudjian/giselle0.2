@@ -187,6 +187,7 @@ export default function InterviewSession() {
     try {
       // Submit the audio recording
       await api.interviews.submitAnswer(
+        interviewId!,
         questions[currentQuestionIndex].id,
         audioBlob
       );

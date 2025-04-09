@@ -165,18 +165,18 @@ export const api = {
     getById: (id: string) => apiClient.get(`/interviews/${id}`),
     create: (data: any) => apiClient.post('/interviews', data),
     getQuestions: (interviewId: string) => apiClient.get(`/interviews/${interviewId}/questions`),
-    submitResponse: (questionId: string, audioBlob: Blob) => {
+    submitAnswer: (interviewId: string, questionId: string, audioBlob: Blob) => {
       const formData = new FormData();
       formData.append('audio', audioBlob);
       
-      return apiClient.post(`/responses/${questionId}`, formData, {
+      return apiClient.post(`/interviews/${interviewId}/questions/${questionId}/answer`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
     },
     complete: (interviewId: string) => apiClient.post(`/interviews/${interviewId}/complete`),
-    getAssessment: (interviewId: string) => apiClient.get(`/interviews/${interviewId}/assessment`),
+    getResults: (interviewId: string) => apiClient.get(`/interviews/${interviewId}/results`),
   },
 };
 

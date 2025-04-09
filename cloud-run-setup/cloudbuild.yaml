@@ -1,0 +1,43 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/giselle-backend:$COMMIT_SHA', '.']
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/giselle-backend:$COMMIT_SHA']
+  
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'giselle-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/giselle-backend:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'GCS_BUCKET_NAME=giselle-uploads,USE_MOCK_DATA=false'
+      - '--set-secrets'
+      - 'OPENROUTER_API_KEY=openrouter-api-key:latest,ELEVENLABS_API_KEY=elevenlabs-api-key:latest'
+  
+  # Tag the image with 'latest' for ease of reference
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['tag', 'gcr.io/$PROJECT_ID/giselle-backend:$COMMIT_SHA', 'gcr.io/$PROJECT_ID/giselle-backend:latest']
+  
+  # Push the 'latest' tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/giselle-backend:latest']
+
+# Store images in Google Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/giselle-backend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/giselle-backend:latest'
+
+# Set a timeout for the build (15 minutes)
+timeout: '900s' 

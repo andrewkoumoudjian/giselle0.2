@@ -11,8 +11,13 @@
     "setup": "cd frontend && bash env-setup.sh"
   },
   "dependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.2",
+    "uuid": "^11.1.0"
   },
   "author": "",
   "license": "MIT"
-} 
+}

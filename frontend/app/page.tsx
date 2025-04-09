@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -13,20 +13,39 @@ import {
   Paper,
   Stack,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Alert
 } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
 import WorkIcon from '@mui/icons-material/Work';
 import Link from 'next/link';
+import { checkApiAvailability } from '../lib/api';
 
 export default function Home() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [apiStatus, setApiStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
+  
+  useEffect(() => {
+    const checkApi = async () => {
+      const isAvailable = await checkApiAvailability();
+      setApiStatus(isAvailable ? 'available' : 'unavailable');
+    };
+    
+    checkApi();
+  }, []);
   
   return (
     <Box>
+      {/* API Status Indicator */}
+      {apiStatus === 'unavailable' && (
+        <Alert severity="error" sx={{ mb: 0 }}>
+          The API server is currently unavailable. Please ensure the backend server is running.
+        </Alert>
+      )}
+      
       {/* Hero Section */}
       <Box 
         sx={{ 

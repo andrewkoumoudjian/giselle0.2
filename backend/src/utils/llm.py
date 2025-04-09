@@ -20,15 +20,22 @@ class LLMClient:
             # Check if we're using mock data
             use_mock = os.getenv("USE_MOCK_DATA", "true").lower() == "true"
             
-            # Get OpenAI API key
-            openai_api_key = os.getenv("OPENAI_API_KEY")
+            # Get OpenRouter API key
+            openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
             
-            if not use_mock and openai_api_key:
-                print("Using real OpenAI API for LLM operations...")
-                cls._instance.client = OpenAI(api_key=openai_api_key)
+            if not use_mock and openrouter_api_key:
+                print("Using real OpenRouter API for LLM operations...")
+                cls._instance.client = OpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=openrouter_api_key,
+                    default_headers={
+                        "HTTP-Referer": "https://giselle-interview.app", 
+                        "X-Title": "Giselle Interview AI"
+                    }
+                )
                 cls._instance.use_mock = False
             else:
-                print("WARNING: Using mock LLM - set USE_MOCK_DATA=false and provide OPENAI_API_KEY to use real LLM")
+                print("WARNING: Using mock LLM - set USE_MOCK_DATA=false and provide OPENROUTER_API_KEY to use real LLM")
                 cls._instance.client = None
                 cls._instance.use_mock = True
                 
@@ -45,13 +52,17 @@ class LLMClient:
             ChatOpenAI instance configured for the requested model
         """
         if not model_name:
-            model_name = os.getenv("DEFAULT_MODEL", "anthropic/claude-3-sonnet")
+            model_name = os.getenv("DEFAULT_MODEL", "deepseek/deepseek-chat-v3-0324:free")
             
         return ChatOpenAI(
             openai_api_base="https://openrouter.ai/api/v1",
             openai_api_key=os.getenv("OPENROUTER_API_KEY"),
             model=model_name,
-            temperature=0.2  # Lower temperature for more consistent, deterministic outputs
+            temperature=0.2,  # Lower temperature for more consistent, deterministic outputs
+            headers={
+                "HTTP-Referer": "https://giselle-interview.app", 
+                "X-Title": "Giselle Interview AI"
+            }
         )
     
     def get_question_generator_llm(self):

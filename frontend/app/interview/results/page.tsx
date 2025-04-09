@@ -179,30 +179,30 @@ export default function InterviewResults() {
         const apiData = resultsResponse.data;
         
         setAssessmentData({
-          overallAssessment: apiData.overall_assessment,
-          skillsData: apiData.skills_assessment.map((skill: any) => ({
-            name: skill.name,
-            value: skill.score
+          overallAssessment: apiData.overall_assessment || "Assessment not available",
+          skillsData: (apiData.skills_assessment || []).map((skill: any) => ({
+            name: skill.name || "Unnamed skill",
+            value: skill.score || 0
           })),
-          responseQualityData: apiData.response_quality.map((response: any, index: number) => ({
+          responseQualityData: (apiData.response_quality || []).map((response: any, index: number) => ({
             name: `Q${index + 1}`,
-            clarity: response.clarity,
-            relevance: response.relevance,
-            depth: response.depth
+            clarity: response.clarity || 0,
+            relevance: response.relevance || 0,
+            depth: response.depth || 0
           })),
-          jobMatchData: apiData.job_match_radar.map((match: any) => ({
-            subject: match.field,
-            A: match.score,
+          jobMatchData: (apiData.job_match_radar || []).map((match: any) => ({
+            subject: match.field || "Unknown",
+            A: match.score || 0,
             fullMark: 100
           })),
           strengthsWeaknesses: {
-            strengths: apiData.strengths,
-            improvements: apiData.improvements
+            strengths: apiData.strengths || [],
+            improvements: apiData.improvements || []
           },
-          jobMatch: apiData.job_match_percentage,
-          questionFeedback: apiData.question_feedback.map((qf: any) => ({
-            question: qf.question,
-            feedback: qf.feedback
+          jobMatch: apiData.job_match_percentage || calculateAverageScore(apiData.job_match_radar),
+          questionFeedback: (apiData.question_feedback || []).map((qf: any, index: number) => ({
+            question: qf.question || `Question ${index + 1}`,
+            feedback: qf.feedback || "No feedback available"
           }))
         });
         
@@ -212,6 +212,13 @@ export default function InterviewResults() {
         setError('Failed to load interview results. Please try again later.');
         setLoading(false);
       }
+    };
+    
+    // Helper function to calculate average score if job_match_percentage is not available
+    const calculateAverageScore = (matchData: any[] = []) => {
+      if (!matchData || matchData.length === 0) return 0;
+      const sum = matchData.reduce((acc, item) => acc + (item.score || 0), 0);
+      return Math.round(sum / matchData.length);
     };
     
     fetchResults();
