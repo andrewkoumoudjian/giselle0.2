@@ -1,0 +1,158 @@
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Companies Table
+CREATE TABLE IF NOT EXISTS companies (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Job Descriptions Table
+CREATE TABLE IF NOT EXISTS job_descriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  department TEXT,
+  required_skills JSONB,
+  soft_skills_priorities JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Candidates Table
+CREATE TABLE IF NOT EXISTS candidates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  phone TEXT,
+  linkedin TEXT,
+  github TEXT,
+  resume_url TEXT,
+  resume_parsed JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Job Applications Table (new)
+CREATE TABLE IF NOT EXISTS job_applications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  job_id UUID REFERENCES job_descriptions(id) ON DELETE CASCADE,
+  candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewing', 'interviewing', 'rejected', 'accepted')),
+  resume_url TEXT,
+  cover_letter TEXT,
+  skills TEXT[],
+  analysis_results JSONB,
+  match_score INTEGER,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Interviews Table (kept from original)
+CREATE TABLE IF NOT EXISTS interviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  job_id UUID REFERENCES job_descriptions(id) ON DELETE CASCADE,
+  candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Questions Table (kept from original)
+CREATE TABLE IF NOT EXISTS questions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  interview_id UUID REFERENCES interviews(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  type TEXT CHECK (type IN ('technical', 'behavioral', 'experience', 'motivation')),
+  skill_assessed TEXT,
+  order_index INTEGER NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Responses Table (kept from original)
+CREATE TABLE IF NOT EXISTS responses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
+  audio_url TEXT,
+  transcription TEXT,
+  analysis_results JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Assessments Table (kept from original)
+CREATE TABLE IF NOT EXISTS assessments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  interview_id UUID REFERENCES interviews(id) ON DELETE CASCADE,
+  empathy_score INTEGER CHECK (empathy_score BETWEEN 0 AND 20),
+  collaboration_score INTEGER CHECK (collaboration_score BETWEEN 0 AND 20),
+  confidence_score INTEGER CHECK (confidence_score BETWEEN 0 AND 20),
+  english_proficiency INTEGER CHECK (english_proficiency BETWEEN 0 AND 20),
+  professionalism INTEGER CHECK (professionalism BETWEEN 0 AND 20),
+  field_importance JSONB,
+  candidate_skills JSONB,
+  correlation_matrix JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create Policies to allow all operations for now (for development)
+-- These can be restricted later for production
+
+-- Companies Policies
+ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on companies" ON companies FOR ALL USING (true);
+
+-- Job Descriptions Policies
+ALTER TABLE job_descriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on job_descriptions" ON job_descriptions FOR ALL USING (true);
+
+-- Candidates Policies
+ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on candidates" ON candidates FOR ALL USING (true);
+
+-- Job Applications Policies
+ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on job_applications" ON job_applications FOR ALL USING (true);
+
+-- Interviews Policies
+ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on interviews" ON interviews FOR ALL USING (true);
+
+-- Questions Policies
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on questions" ON questions FOR ALL USING (true);
+
+-- Responses Policies
+ALTER TABLE responses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on responses" ON responses FOR ALL USING (true);
+
+-- Assessments Policies
+ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on assessments" ON assessments FOR ALL USING (true);
+
+-- Create Storage Buckets (these need to be created in the Storage section of Supabase dashboard)
+-- 1. Navigate to Storage in the Supabase dashboard
+-- 2. Create a new bucket named "resumes"
+-- 3. Create a new bucket named "interview_audio"
+-- 4. Make the buckets public or set appropriate policies
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_job_applications_job_id ON job_applications(job_id);
+CREATE INDEX IF NOT EXISTS idx_job_applications_candidate_id ON job_applications(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_job_applications_status ON job_applications(status);
+CREATE INDEX IF NOT EXISTS idx_job_applications_match_score ON job_applications(match_score);
+
+-- Create a function to update the updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger to automatically update the updated_at column
+CREATE TRIGGER update_job_applications_updated_at
+BEFORE UPDATE ON job_applications
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
