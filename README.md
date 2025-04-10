@@ -1,6 +1,6 @@
-# HR Candidate Filtering System
+# HR Talent Platform
 
-An AI-powered HR system designed to help HR agencies detect and filter candidates based on job listings and user-defined parameters. The system uses AI to analyze job applications and can optionally conduct automated interviews.
+An AI-powered HR system designed to help HR agencies detect and filter candidates based on job listings and user-defined parameters. The system uses AI to analyze job applications, match candidates with job requirements, and streamline the hiring process.
 
 ## System Overview
 
@@ -9,7 +9,9 @@ This system combines advanced AI technologies to provide:
 - Automated candidate filtering based on job descriptions and resumes
 - AI-powered resume analysis and skills matching
 - Customizable filtering parameters for HR professionals
-- Optional automated interview capabilities for deeper candidate assessment
+- Interview scheduling and management
+- Candidate comparison and evaluation
+- Comprehensive analytics dashboard
 - Serverless architecture for minimal computing resources
 
 ## Getting Started
@@ -86,6 +88,9 @@ hr-candidate-filtering-system/
 ### Frontend (.env.local)
 
 - `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3001)
+- `NEXT_PUBLIC_RESUME_PARSER_API_URL`: Resume parser API URL
+- `NEXT_PUBLIC_RESUME_PARSER_API_KEY`: Resume parser API key
+- `NEXT_PUBLIC_ENVIRONMENT`: Current environment (development, production, test)
 - `NEXT_PUBLIC_AUTH_ENABLED`: Enable authentication features (true/false)
 - `NEXT_PUBLIC_APP_NAME`: Application name
 - `NEXT_PUBLIC_APP_DESCRIPTION`: Application description
@@ -99,13 +104,16 @@ hr-candidate-filtering-system/
 
 ## Features
 
+- **Job Listings**: Browse and search for job opportunities
 - **Job Application Collection**: Collect and store job applications with resumes
 - **AI-Powered Candidate Filtering**: Automatically analyze and score candidates based on job requirements
 - **User-Defined Filtering Parameters**: Customize filtering criteria
-- **Optional Automated Interviews**: Conduct AI-driven interviews for deeper candidate analysis
+- **Interview Scheduling**: Schedule and manage interviews with candidates
+- **Candidate Comparison**: Compare multiple candidates side by side
 - **Serverless Architecture**: Designed to run on Vercel and Supabase for minimal computing resources
 - **Resume Analysis**: AI-powered extraction of skills, experience, and education from resumes
 - **Candidate Scoring**: Objective evaluation of candidates against job requirements
+- **Analytics Dashboard**: Comprehensive visualization of hiring metrics and trends
 - **Results Visualization**: Detailed charts and feedback on candidate-job matching
 
 ## Troubleshooting

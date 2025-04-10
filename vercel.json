@@ -4,17 +4,37 @@
     {
       "src": "api/index.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ],
   "env": {
     "SUPABASE_URL": "@supabase_url",
     "SUPABASE_SERVICE_KEY": "@supabase_service_key",
-    "OPENAI_API_KEY": "@openai_api_key"
+    "OPENAI_API_KEY": "@openai_api_key",
+    "NEXT_PUBLIC_API_URL": "@next_public_api_url",
+    "NEXT_PUBLIC_RESUME_PARSER_API_URL": "@next_public_resume_parser_api_url",
+    "NEXT_PUBLIC_RESUME_PARSER_API_KEY": "@next_public_resume_parser_api_key",
+    "NEXT_PUBLIC_ENVIRONMENT": "production"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "@next_public_api_url",
+      "NEXT_PUBLIC_RESUME_PARSER_API_URL": "@next_public_resume_parser_api_url",
+      "NEXT_PUBLIC_RESUME_PARSER_API_KEY": "@next_public_resume_parser_api_key",
+      "NEXT_PUBLIC_ENVIRONMENT": "production"
+    }
   }
 }
