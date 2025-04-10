@@ -27,14 +27,20 @@
     "NEXT_PUBLIC_API_URL": "@next_public_api_url",
     "NEXT_PUBLIC_RESUME_PARSER_API_URL": "@next_public_resume_parser_api_url",
     "NEXT_PUBLIC_RESUME_PARSER_API_KEY": "@next_public_resume_parser_api_key",
-    "NEXT_PUBLIC_ENVIRONMENT": "production"
+    "NEXT_PUBLIC_ENVIRONMENT": "production",
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_KEY": "@next_public_supabase_key",
+    "OPENROUTER_API_KEY": "@openrouter_api_key",
+    "OPENROUTER_MODEL": "@openrouter_model"
   },
   "build": {
     "env": {
       "NEXT_PUBLIC_API_URL": "@next_public_api_url",
       "NEXT_PUBLIC_RESUME_PARSER_API_URL": "@next_public_resume_parser_api_url",
       "NEXT_PUBLIC_RESUME_PARSER_API_KEY": "@next_public_resume_parser_api_key",
-      "NEXT_PUBLIC_ENVIRONMENT": "production"
+      "NEXT_PUBLIC_ENVIRONMENT": "production",
+      "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+      "NEXT_PUBLIC_SUPABASE_KEY": "@next_public_supabase_key"
     }
   }
 }

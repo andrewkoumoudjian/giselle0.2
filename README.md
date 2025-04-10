@@ -1,18 +1,18 @@
 # HR Talent Platform
 
-An AI-powered HR system designed to help HR agencies detect and filter candidates based on job listings and user-defined parameters. The system uses AI to analyze job applications, match candidates with job requirements, and streamline the hiring process.
+A modern HR service backend using Supabase that analyzes job applications with LangGraph agents. This platform is designed to be deployable on Vercel serverless and Supabase with minimal computing resources.
 
 ## System Overview
 
 This system combines advanced AI technologies to provide:
 
 - Automated candidate filtering based on job descriptions and resumes
-- AI-powered resume analysis and skills matching
+- AI-powered resume analysis and skills matching using LangGraph agents
 - Customizable filtering parameters for HR professionals
 - Interview scheduling and management
 - Candidate comparison and evaluation
 - Comprehensive analytics dashboard
-- Serverless architecture for minimal computing resources
+- Serverless architecture using Supabase and Vercel
 
 ## Getting Started
 
@@ -85,36 +85,37 @@ hr-candidate-filtering-system/
 
 ## Environment Variables
 
-### Frontend (.env.local)
+### Frontend and API (.env.local)
 
 - `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3001)
 - `NEXT_PUBLIC_RESUME_PARSER_API_URL`: Resume parser API URL
 - `NEXT_PUBLIC_RESUME_PARSER_API_KEY`: Resume parser API key
 - `NEXT_PUBLIC_ENVIRONMENT`: Current environment (development, production, test)
-- `NEXT_PUBLIC_AUTH_ENABLED`: Enable authentication features (true/false)
-- `NEXT_PUBLIC_APP_NAME`: Application name
-- `NEXT_PUBLIC_APP_DESCRIPTION`: Application description
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase instance URL
+- `NEXT_PUBLIC_SUPABASE_KEY`: Supabase anon/public key
+- `OPENROUTER_API_KEY`: OpenRouter API key for LangGraph
+- `OPENROUTER_MODEL`: OpenRouter model to use (default: deepseek/deepseek-chat-v3-0324:free)
 
 ### Backend (.env)
 
-- `OPENAI_API_KEY`: OpenAI API key for AI analysis
 - `SUPABASE_URL`: Supabase instance URL
 - `SUPABASE_SERVICE_KEY`: Supabase service key for database access
 - `PORT`: Port for local development server (default: 3001)
 
 ## Features
 
-- **Job Listings**: Browse and search for job opportunities
-- **Job Application Collection**: Collect and store job applications with resumes
+- **Job Listings**: Create, manage, and search for job listings
+- **Job Applications**: Submit and track job applications
 - **AI-Powered Candidate Filtering**: Automatically analyze and score candidates based on job requirements
 - **User-Defined Filtering Parameters**: Customize filtering criteria
 - **Interview Scheduling**: Schedule and manage interviews with candidates
 - **Candidate Comparison**: Compare multiple candidates side by side
 - **Serverless Architecture**: Designed to run on Vercel and Supabase for minimal computing resources
-- **Resume Analysis**: AI-powered extraction of skills, experience, and education from resumes
+- **Resume Analysis**: AI-powered extraction of skills, experience, and education from resumes using LangGraph
 - **Candidate Scoring**: Objective evaluation of candidates against job requirements
-- **Analytics Dashboard**: Comprehensive visualization of hiring metrics and trends
-- **Results Visualization**: Detailed charts and feedback on candidate-job matching
+- **Employer Dashboard**: Comprehensive visualization of hiring metrics and job management
+- **Authentication**: User authentication with Supabase Auth
+- **Storage**: Resume and company logo storage with Supabase Storage
 
 ## Troubleshooting
 

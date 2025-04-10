@@ -1,6 +1,4 @@
-import { SupabaseAuthProvider } from '../context/SupabaseAuthContext';
 import { AuthProvider } from '../context/AuthContext';
-import { ChakraProvider } from '@chakra-ui/react';
 import { useEffect } from 'react';
 import '../styles/globals.css';
 
@@ -17,13 +15,9 @@ function MyApp({ Component, pageProps }) {
   const getLayout = Component.getLayout || ((page) => page);
 
   return (
-    <ChakraProvider>
-      <AuthProvider>
-        <SupabaseAuthProvider>
-          {getLayout(<Component {...pageProps} />)}
-        </SupabaseAuthProvider>
-      </AuthProvider>
-    </ChakraProvider>
+    <AuthProvider>
+      {getLayout(<Component {...pageProps} />)}
+    </AuthProvider>
   );
 }
 

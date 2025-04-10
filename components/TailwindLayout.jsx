@@ -1,6 +1,6 @@
 import React from 'react';
-import TailwindNavbar from './TailwindNavbar';
-import TailwindFooter from './TailwindFooter';
+import EnhancedNavbar from './EnhancedNavbar';
+import Footer from './Footer';
 import Head from 'next/head';
 
 const TailwindLayout = ({ children, title = 'HR Talent Platform' }) => {
@@ -12,14 +12,14 @@ const TailwindLayout = ({ children, title = 'HR Talent Platform' }) => {
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      
-      <TailwindNavbar />
-      
+
+      <EnhancedNavbar />
+
       <main className="flex-grow bg-gray-50">
         {children}
       </main>
-      
-      <TailwindFooter />
+
+      <Footer />
     </div>
   );
 };

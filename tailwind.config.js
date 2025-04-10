@@ -44,7 +44,4 @@ module.exports = {
     },
   },
   plugins: [],
-  corePlugins: {
-    preflight: false, // Disable Tailwind's reset to prevent conflicts with Chakra UI
-  },
 }
